@@ -45,13 +45,11 @@ async def upload_post(
 @router.get("/feed/global", response_model=FeedResponse)
 def global_feed(
         db: Session = Depends(get_db),
-        user_id: int = Depends(jwt_user_id)
 ):
     """ Feed post management. As a reminder, the feed is the page that gathers
         all recent posts, so it's just a huge fetch of the all most recent
         posts, and on the frontend if the person scrolls to the eighth one, it triggers another request"""
-    if not user_id:
-        raise HTTPException(status_code=403, detail="You are not allowed to post")
+
     posts = db.query(Post).filter_by(hidden_tag=False).order_by(Post.created_at.desc()).all()
     content = []
     for p in posts:
@@ -193,11 +191,8 @@ def user_feed(
 def show_post(
         post_id: int,
         db: Session = Depends(get_db),
-        user_id: int = Depends(jwt_user_id)
 ):
     """Return all the post info with post_id in param"""
-    if not user_id:
-        raise HTTPException(status_code=403, detail="You are not allowed to see the post")
     post = db.get(Post, post_id)
     if not post:
         raise HTTPException(404, "Post not found")
