@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: Optional[str] = Field(None, alias="POSTGRES_PASSWORD")
 
     MQTT_HOST: str = Field(..., alias="MQTT_HOST")
+    MQTT_PORT: int = Field(1883, alias="MQTT_PORT")
     MQTT_USER: str = Field(..., alias="MQTT_USER")
     MQTT_PASSWORD: str = Field(..., alias="MQTT_PASSWORD")
 
@@ -27,7 +28,7 @@ settings = Settings()
 fast_mqtt = FastMQTT(
     config=MQTTConfig(
         host=settings.MQTT_HOST,
-        port=1883,
+        port=settings.MQTT_PORT,
         username=settings.MQTT_USER,
         password=settings.MQTT_PASSWORD,
         keepalive=60

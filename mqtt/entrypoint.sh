@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-PASSFILE="/mosquitto/config/passwordfile"
+PASSFILE="/mosquitto/passwd"
 
 if [ -z "$MQTT_USER" ] || [ -z "$MQTT_PASSWORD" ]; then
   echo "MQTT_USER et MQTT_PASSWORD doivent être définis"
