@@ -12,7 +12,7 @@ class PostDTO(BaseModel):
     created_at: datetime
     hidden_tag: bool
 
-    class ConfigDict:
+    class Config:
         from_attributes = True
 
 class PostDetailResponse(BaseModel):
@@ -53,5 +53,5 @@ class PostLightDTO(BaseModel):
     user_profile: Optional[str]
     created_at: datetime
 
-    class ConfigDict:
+    class Config:
         from_attributes = True

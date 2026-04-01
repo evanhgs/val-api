@@ -1,4 +1,5 @@
 import datetime
+import json
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -60,7 +61,7 @@ async def send_message(
     )
 
     topic = f"chat/{conversation.id}/messages"
-    fast_mqtt.publish(topic, jsonable_encoder(message_dto))
+    fast_mqtt.publish(topic, json.dumps(jsonable_encoder(message_dto)), qos=1)
 
     return message_dto
 

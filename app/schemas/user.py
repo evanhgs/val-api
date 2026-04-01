@@ -20,7 +20,7 @@ class UserResponse(BaseModel):
     profile_picture: Optional[str]
     created_at: datetime
 
-    class ConfigDict:
+    class Config:
         from_attributes = True
 
 class UserSearchItem(BaseModel):
@@ -36,7 +36,7 @@ class UserLightDTO(BaseModel):
     username: str
     profile_picture: Optional[str]
 
-    class ConfigDict:
+    class Config:
         from_attributes = True
 
 class SuggestionDTO(BaseModel):

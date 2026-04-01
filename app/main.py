@@ -7,11 +7,11 @@ from starlette.responses import JSONResponse
 from app.core.config import fast_mqtt
 from app.core.utils import get_version
 from app.routes import auth, user, follow, post, like, comment, message
-from app.core.database import engine
-from app.models.models import Base
+# from app.core.database import engine
+# from app.models.models import Base
 
-# create DB
-Base.metadata.create_all(bind=engine)
+# la création des tables est gérée par Alembic (make migrate)
+# Base.metadata.create_all(bind=engine)
 
 
 
@@ -42,11 +42,6 @@ def connect(client, flags, rc, properties):
 @fast_mqtt.on_message()
 async def messages(client, topic, payload, qos, properties):
     print(f"Message reçu: {payload} sur {topic}")
-
-@app.post("/ssage/send-me")
-async def send_message(topic: str, message: str):
-    fast_mqtt.publish(topic, message)
-    return {"status": "message sent"}
 
 # Routers
 app.include_router(auth.router)

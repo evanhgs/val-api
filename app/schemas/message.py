@@ -20,14 +20,14 @@ class MessageDTO(BaseModel):
     is_read: bool
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class MessageOut(BaseModel):
     detail: str
     message: MessageDTO
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class ConversationDTO(BaseModel):
     id: int
@@ -40,4 +40,4 @@ class ConversationOut(BaseModel):
     messages: list[MessageDTO]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
