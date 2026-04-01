@@ -156,6 +156,4 @@ def test_post_details(client: TestClient, auth_headers: dict, picture):
     response = client.get(f"/post/{post_id}", headers=auth_headers)
     assert response.status_code == 200
     detail = PostDetailResponse(**response.json())
-    assert str(detail.post.id) == post_id
-    assert isinstance(detail.likes, dict)
-    assert isinstance(detail.comments, dict)
+    assert detail.post.id == post_id

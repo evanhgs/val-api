@@ -12,9 +12,18 @@ def comment_payload():
 
 @pytest.fixture
 def created_comment(client: TestClient, created_post: dict, auth_headers: dict, comment_payload: dict):
-    response = client.put(f"/comment/{created_post['id']}", json=comment_payload, headers=auth_headers)
+    response = client.post(f"/comment/{created_post['id']}", json=comment_payload, headers=auth_headers)
     assert response.status_code == 200
     return response.json()
+
+
+@pytest.fixture(name="client_data")
+def client_data() -> dict[str, str]:
+    return {
+        "username": "testclient2",
+        "email": "testclient2@example.com",
+        "password": "supermegapasswordclient2"
+    }
 
 @pytest.fixture(name="user_data")
 def user_data() -> dict[str, str]:
@@ -66,15 +75,20 @@ def fake_image_file(filename="test.png"):
     }
 
 @pytest.fixture
-def created_post(client: TestClient, auth_headers: dict, post_data: dict):
-    response = client.post("/post/upload", json=post_data, headers=auth_headers)
+def created_post(client: TestClient, auth_headers: dict, picture: dict):
+    response = client.post(
+        "/post/upload",
+        headers=auth_headers,
+        data={"caption": "Post for comment tests"},
+        files=picture,
+    )
     assert response.status_code == 200
     return response.json()
 
 
 
 def test_comment_post(client: TestClient, created_post: dict, comment_payload: dict, auth_headers: dict):
-    response = client.put(f"/comment/{created_post['id']}", json=comment_payload, headers=auth_headers)
+    response = client.post(f"/comment/{created_post['id']}", json=comment_payload, headers=auth_headers)
     assert response.status_code == 200
     data = response.json()
     assert data["post_id"] == created_post["id"]
@@ -84,46 +98,46 @@ def test_comment_post(client: TestClient, created_post: dict, comment_payload: d
 
 
 def test_comment_post_not_found(client: TestClient, comment_payload: dict, auth_headers: dict):
-    response = client.put("/comment/00000000-0000-0000-0000-000000000000", json=comment_payload, headers=auth_headers)
+    response = client.post("/comment/999999999", json=comment_payload, headers=auth_headers)
     assert response.status_code == 404
     assert response.json()["detail"] == "Post not found"
 
 
 def test_comment_too_long(client: TestClient, created_post: dict, auth_headers: dict):
     payload = {"content": "x" * 1001}
-    response = client.put(f"/comment/{created_post['id']}", json=payload, headers=auth_headers)
+    response = client.post(f"/comment/{created_post['id']}", json=payload, headers=auth_headers)
     assert response.status_code == 400
     assert response.json()["detail"] == "Comment too long"
 
 
 def test_get_post_comments(client: TestClient, created_post: dict, created_comment: dict, auth_headers: dict):
-    response = client.get(f"/comment/{created_post['id']}/contents", headers=auth_headers)
+    response = client.get(f"/comment/{created_post['id']}", headers=auth_headers)
     assert response.status_code == 200
     data = response.json()
-    assert "content" in data
+    assert "contents" in data
     assert data["count"] == 1
-    assert data["content"][0]["content"] == created_comment["content"]
+    assert data["contents"][0]["content"] == created_comment["content"]
 
 
 def test_get_all_user_comments(client: TestClient, created_comment: dict, auth_headers: dict):
-    response = client.get("/comment/all", headers=auth_headers)
+    response = client.get("/comment/current/all", headers=auth_headers)
     assert response.status_code == 200
     data = response.json()
-    assert "content" in data
+    assert "contents" in data
     assert data["count"] >= 1
-    assert any(c["id"] == created_comment["id"] for c in data["content"])
+    assert any(c["id"] == created_comment["id"] for c in data["contents"])
 
 
 def test_delete_comment_success(client: TestClient, created_comment: dict, auth_headers: dict):
-    response = client.delete(f"/comment/delete/{created_comment['id']}", headers=auth_headers)
+    response = client.delete(f"/comment/{created_comment['id']}", headers=auth_headers)
     assert response.status_code == 200
     data = response.json()
     assert data["message"] == "Comment deleted"
-    assert data["comment_id"] == created_comment["id"]
+    assert data["comment_id"]["id"] == created_comment["id"]
 
 
 def test_delete_comment_not_found(client: TestClient, auth_headers: dict):
-    response = client.delete("/comment/delete/00000000-0000-0000-0000-000000000000", headers=auth_headers)
+    response = client.delete("/comment/999999999", headers=auth_headers)
     assert response.status_code == 404
     assert response.json()["detail"] == "Comment not found"
 
@@ -139,6 +153,6 @@ def test_delete_comment_unauthorized(client: TestClient, created_comment: dict, 
     headers = {"Authorization": f"Bearer {token}"}
 
     # Essaye de supprimer un commentaire qu'il n'a pas écrit
-    response = client.delete(f"/comment/delete/{created_comment['id']}", headers=headers)
+    response = client.delete(f"/comment/{created_comment['id']}", headers=headers)
     assert response.status_code == 403
     assert response.json()["detail"] == "Unauthorized to delete"

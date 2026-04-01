@@ -1,4 +1,7 @@
+import io
+
 import pytest
+from PIL import Image
 from starlette.testclient import TestClient
 from app.schemas.auth import AuthResponse
 
@@ -50,60 +53,69 @@ def auth_headers(auth_token: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {auth_token}"}
 
 @pytest.fixture
-def post_data():
+def picture(filename="test-like.png"):
+    file = io.BytesIO()
+    image = Image.new("RGB", (10, 10), color="white")
+    image.save(file, "JPEG")
+    file.seek(0)
     return {
-        "title": "Mon post à liker",
-        "content": "Contenu pour test like",
+        "file": (filename, file, "image/jpeg")
     }
 
 
 @pytest.fixture
-def created_post(client: TestClient, auth_headers: dict, post_data: dict):
-    response = client.post("/post/upload", json=post_data, headers=auth_headers)
+def created_post(client: TestClient, auth_headers: dict, picture: dict):
+    response = client.post(
+        "/post/upload",
+        headers=auth_headers,
+        data={"caption": "Post pour test like"},
+        files=picture,
+    )
     assert response.status_code == 200
     return response.json()
 
 
 def test_like_post(client: TestClient, auth_headers: dict, created_post: dict):
-    response = client.put(f"/like/{created_post['id']}", headers=auth_headers)
+    response = client.post(f"/like/{created_post['id']}", headers=auth_headers)
     assert response.status_code == 200
     data = response.json()
     assert data["post_id"] == created_post["id"]
-    assert "like_id" in data
+    assert "id" in data
     assert "created_at" in data
 
 
 def test_like_post_twice_should_fail(client: TestClient, auth_headers: dict, created_post: dict):
-    client.put(f"/like/{created_post['id']}", headers=auth_headers)
-    response = client.put(f"/like/{created_post['id']}", headers=auth_headers)
+    client.post(f"/like/{created_post['id']}", headers=auth_headers)
+    response = client.post(f"/like/{created_post['id']}", headers=auth_headers)
     assert response.status_code == 400
     assert response.json()["detail"] == "You have already liked this post"
 
 
 def test_unlike_post(client: TestClient, auth_headers: dict, created_post: dict):
     # Liker d'abord
-    client.put(f"/like/{created_post['id']}", headers=auth_headers)
+    client.post(f"/like/{created_post['id']}", headers=auth_headers)
     # Ensuite unliker
-    response = client.delete(f"/like/{created_post['id']}/unlike", headers=auth_headers)
+    response = client.delete(f"/like/{created_post['id']}", headers=auth_headers)
     assert response.status_code == 200
     data = response.json()
-    assert data["post_id_attached"] == created_post["id"]
-    assert "like_id_removed" in data
-    assert "user_id_from_like" in data
+    assert data["post_id"] == created_post["id"]
+    assert "id" in data
+    assert "user_id" in data
 
 
 def test_get_liked_posts_by_user(client: TestClient, auth_headers: dict, authenticated_user: AuthResponse, created_post: dict):
-    client.put(f"/like/{created_post['id']}", headers=auth_headers)
+    client.post(f"/like/{created_post['id']}", headers=auth_headers)
 
     response = client.get(f"/like/liked-posts/{authenticated_user.user_id}")
     assert response.status_code == 200
     data = response.json()
-    assert isinstance(data, list)
-    assert any(p["post_id"] == created_post["id"] for p in data)
+    assert data["user_id"] == authenticated_user.user_id
+    assert isinstance(data["liked_posts"], list)
+    assert any(p["id"] == created_post["id"] for p in data["liked_posts"])
 
 
 def test_get_post_likes(client: TestClient, auth_headers: dict, created_post: dict):
-    client.put(f"/like/{created_post['id']}", headers=auth_headers)
+    client.post(f"/like/{created_post['id']}", headers=auth_headers)
 
     response = client.get(f"/like/get-likes/{created_post['id']}")
     assert response.status_code == 200

@@ -29,7 +29,7 @@ def test_get_own_profile(client):
     assert response.status_code == 200
     data = response.json()
     assert data["username"] == "testuser"
-    assert UUID(data["id"])
+    assert data["id"]
     assert "email" in data
 
 
