@@ -1,81 +1,28 @@
-build-dev: docker-build-dev
-build-test: docker-build-test
-build-prod: docker-build-prod
-down: docker-stop
-pull: docker-pull
-# build the image
-build-version: docker-build-version
-build-latest: docker-build-latest
-# tag the image
-tag-version: docker-tag-version
-tag-latest: docker-tag-latest
-# push the image to the registry
-push-version: docker-push-version
-push-latest: docker-push-latest
-# start the pytest
-pytest-all: pytest-auth pytest-user pytest-post pytest-follow pytest-comment
-# alembic python database
-alembic-init: python-alembic-init
-alembic-first: python-alembic-first-migration
-alembic-next: python-alembic-second-migration
-alembic-downgrade: python-alembic-downgrading
+.PHONY: infra-up infra-down run migrate test clean build-prod
 
-docker-build-dev:
-	docker compose -f 'docker-compose.yml' up -d --build
+# --- Infrastructure ---
+infra-up:
+	docker compose up -d --build val-db-dev mqtt-dev
 
-docker-build-test:
-	docker compose -f 'docker-compose.test.yml' up -d --build
-
-docker-build-prod:
-	docker compose -f 'docker-compose.prd.yml' up -d --build
-
-docker-pull:
-	docker compose pull
-
-docker-stop:
+infra-down:
 	docker compose down
 
-docker-build-version:
-	docker build -t val-api:2.0.X -f Dockerfile .
+# --- Développement ---
+run:
+	uvicorn app.main:app --host 0.0.0.0 --port 5000 --reload --reload-dir app --log-level debug
 
-docker-build-latest:
-	docker build -t val-api:latest -f Dockerfile .
-
-docker-tag-version:
-	docker tag val-api:2.0.X evanhs/val-api:2.0.X
-
-docker-tag-latest:
-	docker tag val-api:latest evanhs/val-api:latest
-
-docker-push-version:
-	docker push evanhs/val-api:2.0.X
-
-docker-push-latest:
-	docker push evanhs/val-api:latest
-
-pytest-auth:
-	pytest .\app\tests\auth.py
-
-pytest-user:
-	pytest .\app\tests\user.py
-
-pytest-post:
-	pytest .\app\tests\post.py
-
-pytest-follow:
-	pytest .\app\tests\follow.py
-
-pytest-comment:
-	pytest .\app\tests\comment.py
-
-python-alembic-init:
-	alembic init --template pyproject alembic
-
-python-alembic-first-migration:
+migrate:
 	alembic upgrade head
 
-python-alembic-second-migration:
-	alembic revision --autogenerate -m "Add a column"
+test:
+	python3 -m pytest app/tests/
 
-python-alembic-downgrading:
-	alembic downgrade base
+# --- Production & Build ---
+build-prod:
+	docker compose -f docker-compose.prd.yml up -d --build
+
+# --- Utilitaires ---
+clean:
+	docker compose down -v
+	find . -type d -name "__pycache__" -exec rm -rf {} +
+	find . -type f -name "*.pyc" -delete
