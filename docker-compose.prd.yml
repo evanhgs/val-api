@@ -60,13 +60,11 @@ services:
       MQTT_USER: ${MQTT_USER}
       MQTT_PASSWORD: ${MQTT_PASSWORD}
     volumes:
-      - ./mqtt/mosquitto.conf:/mosquitto/config/mosquitto.conf
-      - ./mqtt/entrypoint.sh:/mosquitto/entrypoint.sh
-      - ./mqtt/data:/mosquitto/data
-      - ./mqtt/log:/mosquitto/log
-      - ./mqtt/config:/mosquitto/config
+      - ./mqtt/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./mqtt/entrypoint.sh:/mosquitto/entrypoint.sh:ro
+      - mqtt_prd_data:/mosquitto/data
+      - mqtt_prd_log:/mosquitto/log
     ports:
-      - "1883:1883"
       - "9001:9001"
     entrypoint: [ "/mosquitto/entrypoint.sh" ]
     healthcheck:
@@ -76,10 +74,13 @@ services:
       retries: 10
     networks:
       - frontend
+      - backend
 
 volumes:
   postgres_data:
   uploads_data:
+  mqtt_prd_data:
+  mqtt_prd_log:
 
 networks:
   backend:
