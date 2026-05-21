@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
-
-from fastapi import FastAPI
+import logging
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 
@@ -29,10 +29,16 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*", "https://app.evanh.site"],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logging.exception("Unhandled exception processing request %s %s", request.method, request.url)
+    headers = {"Access-Control-Allow-Origin": "https://app.evanh.site"}
+    return JSONResponse(status_code=500, content={"status": "error", "detail": str(exc)}, headers=headers)
 
 @fast_mqtt.on_connect()
 def connect(client, flags, rc, properties):
@@ -68,4 +74,4 @@ async def health_check():
 
 @app.get("/version")
 def version():
-    return {"version": get_version()}
+    return {"version": "2.4.0"}
