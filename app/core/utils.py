@@ -67,14 +67,6 @@ def upload_picture_util(file: UploadFile) -> str:
     return filename
 
 
-def get_version():
-    """Retrieves the app version from version.txt (written by hands)"""
-    try:
-        with open("version.txt") as f:
-            return f.read().strip()
-    except FileNotFoundError:
-        return "unknown"
-
 
 class ConnectionManager:
     """Generic class to manages websocket connections"""

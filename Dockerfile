@@ -8,8 +8,6 @@ COPY ./requirements.txt /code/requirements.txt
 
 RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
-COPY ./version.txt /code/version.txt
-
 COPY ./public/uploads/default.jpg /code/public/uploads/default.jpg
 
 COPY ./mqtt /code/mqtt

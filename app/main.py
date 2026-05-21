@@ -5,7 +5,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 
 from app.core.config import fast_mqtt
-from app.core.utils import get_version
 from app.routes import auth, user, follow, post, like, comment, message
 # from app.core.database import engine
 # from app.models.models import Base
